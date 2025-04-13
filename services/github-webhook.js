@@ -63,7 +63,7 @@ export function verifyWebhook(payload, signature) {
 }
 
 /**
- * Parses a GitHub push event into a clear, detailed Telegram message with file changes and timestamp.
+ * Parses a GitHub push event into a detailed Telegram message with accurate commit count.
  * @param {Object} payload - The webhook payload.
  * @returns {string} - Formatted message.
  */
@@ -77,11 +77,12 @@ export function handlePushEvent(payload) {
 
     // Extract details
     const branch = ref.replace('refs/heads/', '') || 'unknown';
-    const commitCount = commits.length || 0;
+    const commitCount = commits.length; // No default override
+    console.log(`Processing ${commitCount} commits for push by @${pusher.name} to ${branch}`); // Debug log
     const repoFullName = repository.full_name || repository.name || 'unknown/unknown-repo';
     const commitMessage = commits[0] && commits[0].message ? commits[0].message.split('\n')[0] : 'No commit message provided';
 
-    // Aggregate file changes from all commits (limit to 3 per type)
+    // Aggregate file changes (limit to 3 per type)
     let addedFiles = [];
     let modifiedFiles = [];
     let removedFiles = [];
