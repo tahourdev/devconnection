@@ -63,7 +63,7 @@ export function verifyWebhook(payload, signature) {
 }
 
 /**
- * Parses a GitHub push event into a detailed Telegram message with accurate commit count.
+ * Parses a GitHub push event into a detailed Telegram message with exactly two commit messages.
  * @param {Object} payload - The webhook payload.
  * @returns {string} - Formatted message.
  */
@@ -77,10 +77,16 @@ export function handlePushEvent(payload) {
 
     // Extract details
     const branch = ref.replace('refs/heads/', '') || 'unknown';
-    const commitCount = commits.length; // No default override
+    const commitCount = commits.length;
     console.log(`Processing ${commitCount} commits for push by @${pusher.name} to ${branch}`); // Debug log
     const repoFullName = repository.full_name || repository.name || 'unknown/unknown-repo';
-    const commitMessage = commits[0] && commits[0].message ? commits[0].message.split('\n')[0] : 'No commit message provided';
+    const topCommitMessage = commits[0] && commits[0].message ? commits[0].message.split('\n')[0] : 'No commit message provided';
+
+    // List exactly two commit messages
+    const commitMessages = commits.slice(0, 2).map(commit => {
+      const message = commit.message ? commit.message.split('\n')[0] : 'No message';
+      return `  - ${message}`;
+    }).join('\n') || '  - None';
 
     // Aggregate file changes (limit to 3 per type)
     let addedFiles = [];
@@ -114,7 +120,8 @@ export function handlePushEvent(payload) {
       `📦 *Repository*: ${repoFullName}\n` +
       `🌿 *Branch*: ${branch}\n` +
       `🔢 *Commits*: ${commitCount}${commitCount === 0 ? ' (No commits found)' : ''}\n` +
-      `📝 *Top Commit*: ${commitMessage}\n` +
+      `📜 *Commit Messages*:\n${commitMessages}\n` +
+      `📝 *Top Commit*: ${topCommitMessage}\n` +
       `${addedText}\n` +
       `${modifiedText}\n` +
       `${removedText}\n` +
