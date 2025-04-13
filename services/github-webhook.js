@@ -63,7 +63,7 @@ export function verifyWebhook(payload, signature) {
 }
 
 /**
- * Parses a GitHub push event into a clear, detailed, icon-rich Telegram message with timestamp.
+ * Parses a GitHub push event into a clear, detailed Telegram message with file changes and timestamp.
  * @param {Object} payload - The webhook payload.
  * @returns {string} - Formatted message.
  */
@@ -81,25 +81,47 @@ export function handlePushEvent(payload) {
     const repoFullName = repository.full_name || repository.name || 'unknown/unknown-repo';
     const commitMessage = commits[0] && commits[0].message ? commits[0].message.split('\n')[0] : 'No commit message provided';
 
-    // Generate timestamp (e.g., 2025-04-13 15:30:45 UTC)
+    // Aggregate file changes from all commits (limit to 3 per type)
+    let addedFiles = [];
+    let modifiedFiles = [];
+    let removedFiles = [];
+    commits.forEach(commit => {
+      if (commit.added) addedFiles.push(...commit.added);
+      if (commit.modified) modifiedFiles.push(...commit.modified);
+      if (commit.removed) removedFiles.push(...commit.removed);
+    });
+    // Deduplicate and limit
+    addedFiles = [...new Set(addedFiles)].slice(0, 3);
+    modifiedFiles = [...new Set(modifiedFiles)].slice(0, 3);
+    removedFiles = [...new Set(removedFiles)].slice(0, 3);
+
+    // Format file lists
+    const formatFileList = files => files.length ? files.map(f => `  - ${f}`).join('\n') : '  - None';
+    const addedText = `➕ *Added*:\n${formatFileList(addedFiles)}`;
+    const modifiedText = `✏️ *Modified*:\n${formatFileList(modifiedFiles)}`;
+    const removedText = `🗑️ *Removed*:\n${formatFileList(removedFiles)}`;
+
+    // Generate timestamp
     const now = new Date();
     const timestamp = now.toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
 
-    // Detailed, icon-rich message
+    // Detailed message
     return (
-      `🚀 *DevConnect Team Push Update* 🚀\n` +
+      `🚀 *Team Push Update* 🚀\n` +
       `──────────────────\n` +
       `👤 *Pusher*: @${pusher.name}\n` +
       `📦 *Repository*: ${repoFullName}\n` +
       `🌿 *Branch*: ${branch}\n` +
       `🔢 *Commits*: ${commitCount}${commitCount === 0 ? ' (No commits found)' : ''}\n` +
       `📝 *Top Commit*: ${commitMessage}\n` +
+      `${addedText}\n` +
+      `${modifiedText}\n` +
+      `${removedText}\n` +
       `🕒 *Pushed At*: ${timestamp}\n` +
       `──────────────────`
     );
   } catch (error) {
     console.error('Error parsing push event:', error);
-    // Include timestamp in error message
     const timestamp = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
     return `⚠️ *Push processing failed* ⚠️\n🕒 *At*: ${timestamp}`;
   }
