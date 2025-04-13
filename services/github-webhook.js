@@ -116,7 +116,6 @@ export function handlePushEvent(payload) {
     return (
       `🚀 *Team Push Update* 🚀\n` +
       `──────────────────\n` +
-      `👤 *Pusher*: @${pusher.name}\n` +
       `📦 *Repository*: ${repoFullName}\n` +
       `🌿 *Branch*: ${branch}\n` +
       `🔢 *Commits*: ${commitCount}${commitCount === 0 ? ' (No commits found)' : ''}\n` +
