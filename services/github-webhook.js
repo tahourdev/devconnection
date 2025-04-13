@@ -63,7 +63,7 @@ export function verifyWebhook(payload, signature) {
 }
 
 /**
- * Parses a GitHub push event into a beautiful, icon-rich Telegram message.
+ * Parses a GitHub push event into a clear, detailed, icon-rich Telegram message with timestamp.
  * @param {Object} payload - The webhook payload.
  * @returns {string} - Formatted message.
  */
@@ -72,25 +72,35 @@ export function handlePushEvent(payload) {
     // Default values for edge cases
     const pusher = payload.pusher || { name: 'Unknown' };
     const ref = payload.ref || 'refs/heads/unknown';
-    const repository = payload.repository || { name: 'unknown-repo' };
+    const repository = payload.repository || { name: 'unknown-repo', full_name: 'unknown/unknown-repo' };
     const commits = Array.isArray(payload.commits) ? payload.commits : [];
 
+    // Extract details
     const branch = ref.replace('refs/heads/', '') || 'unknown';
-    const commitCount = commits.length || 1;
-    const repoName = repository.name || 'unknown-repo';
-    const commitMessage = commits[0] && commits[0].message ? commits[0].message.split('\n')[0] : 'No message provided';
+    const commitCount = commits.length || 0;
+    const repoFullName = repository.full_name || repository.name || 'unknown/unknown-repo';
+    const commitMessage = commits[0] && commits[0].message ? commits[0].message.split('\n')[0] : 'No commit message provided';
 
-    // Beautiful message with icons and Markdown
+    // Generate timestamp (e.g., 2025-04-13 15:30:45 UTC)
+    const now = new Date();
+    const timestamp = now.toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+
+    // Detailed, icon-rich message
     return (
-      `🚀 *New Push Alert* 🚀\n` +
+      `🚀 *DevConnect Team Push Update* 🚀\n` +
+      `──────────────────\n` +
       `👤 *Pusher*: @${pusher.name}\n` +
-      `📦 *Repo*: ${repoName}\n` +
+      `📦 *Repository*: ${repoFullName}\n` +
       `🌿 *Branch*: ${branch}\n` +
-      `🔢 *Commits*: ${commitCount}\n` +
-      `📝 *Message*: ${commitMessage}`
+      `🔢 *Commits*: ${commitCount}${commitCount === 0 ? ' (No commits found)' : ''}\n` +
+      `📝 *Top Commit*: ${commitMessage}\n` +
+      `🕒 *Pushed At*: ${timestamp}\n` +
+      `──────────────────`
     );
   } catch (error) {
     console.error('Error parsing push event:', error);
-    return '⚠️ Failed to process GitHub push event';
+    // Include timestamp in error message
+    const timestamp = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+    return `⚠️ *Push processing failed* ⚠️\n🕒 *At*: ${timestamp}`;
   }
 }
