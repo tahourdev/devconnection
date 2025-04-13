@@ -114,7 +114,7 @@ export function handlePushEvent(payload) {
 
     // Detailed message
     return (
-      `🚀 *Team Push Update* 🚀\n` +
+      `🚀 *DevConnect Team Push Update* 🚀\n` +
       `──────────────────\n` +
       `📦 *Repository*: ${repoFullName}\n` +
       `🌿 *Branch*: ${branch}\n` +
